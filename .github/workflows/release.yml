@@ -17,7 +17,8 @@ jobs:
       matrix:
         include:
           - os: macos-latest
-            args: --bundles app
+            # Universal build runs on both Apple Silicon and Intel Macs; dmg is for first installs.
+            args: --bundles app,dmg --target universal-apple-darwin
           - os: windows-latest
             args: --bundles nsis
     runs-on: ${{ matrix.os }}
@@ -34,25 +35,8 @@ jobs:
           cache: npm
           cache-dependency-path: src/package-lock.json
       - uses: dtolnay/rust-toolchain@stable
-      - name: Import macOS signing certificate
-        if: runner.os == 'macOS'
-        env:
-          CERT: ${{ secrets.MAC_CERTIFICATE }}
-          CERT_PASSWORD: ${{ secrets.MAC_CERTIFICATE_PASSWORD }}
-        run: |
-          KC="$RUNNER_TEMP/build.keychain-db"
-          echo "$CERT" | base64 --decode > "$RUNNER_TEMP/cert.p12"
-          security create-keychain -p ci "$KC"
-          security set-keychain-settings -lut 21600 "$KC"
-          security unlock-keychain -p ci "$KC"
-          security import "$RUNNER_TEMP/cert.p12" -k "$KC" -P "$CERT_PASSWORD" -T /usr/bin/codesign
-          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k ci "$KC" >/dev/null
-          security list-keychains -d user -s "$KC" $(security list-keychains -d user | tr -d '"')
-          # Self-signed: trust it for code signing so codesign accepts the identity.
-          security find-certificate -c "QuotaDot Dev" -p "$KC" > "$RUNNER_TEMP/cert.pem"
-          sudo security add-trusted-cert -d -r trustRoot -p codeSign -k /Library/Keychains/System.keychain "$RUNNER_TEMP/cert.pem"
-          security find-identity -v -p codesigning "$KC"
-          rm -f "$RUNNER_TEMP/cert.p12"
+        with:
+          targets: ${{ runner.os == 'macOS' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
       - run: npm ci
         working-directory: src
       - run: npm test
@@ -62,7 +46,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
-          APPLE_SIGNING_IDENTITY: ${{ runner.os == 'macOS' && 'QuotaDot Dev' || '' }}
         with:
           projectPath: src
           tagName: ${{ inputs.tag }}

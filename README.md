@@ -1,16 +1,29 @@
 # Quota Donut 배포
 
-Codex, Claude, Google Antigravity 계정의 남은 사용 한도를 보여 주는 macOS와 Windows 트레이 앱 Quota Donut의 설치 파일을 배포하는 저장소다. 소스 코드는 비공개 저장소에 있다.
+Codex, Claude, Google Antigravity 계정의 남은 사용 한도와 초기화 시각을 보여 주는 macOS와 Windows 트레이 앱 Quota Donut의 설치 파일을 배포하는 저장소다. 소스 코드는 비공개 저장소에 있다.
 
 ## 설치
 
 [최신 릴리스](https://github.com/imeru/quota-donut-releases/releases/latest)에서 내려받는다.
 
-- macOS (Apple Silicon): `Quota.Donut_*_aarch64.app.tar.gz`를 풀어 `/Applications`로 옮긴다.
-- Windows: `Quota.Donut_*_x64-setup.exe`를 실행한다.
+### macOS (Apple Silicon, Intel 공용)
 
-설치한 뒤에는 앱이 새 버전을 확인해 화면 위쪽에 알리고, **업데이트**를 누르면 내려받아 서명을 검증한 뒤 설치한다.
+1. `Quota.Donut_*_universal.dmg`를 열고 Quota Donut을 응용 프로그램 폴더로 끌어 놓는다.
+2. 처음 열면 "Apple은 'Quota Donut'에 악성 코드가 없음을 확인할 수 없습니다" 같은 경고가 뜬다. Apple 개발자 서명과 공증을 받지 않은 앱이라서 나오는 경고다. **완료**를 누른다.
+3. 시스템 설정 > 개인정보 보호 및 보안으로 가서 아래쪽의 **그래도 열기**를 누르고 Mac 비밀번호를 입력한다. 처음 한 번만 하면 된다.
+4. 계정을 연결하면 로그인 정보를 Keychain에 저장할 때 허용 여부를 묻는다. **항상 허용**을 누른다. 앱을 업데이트한 뒤에도 한 번 더 묻는다.
 
-## 주의
+### Windows
 
-정식 배포용 서명과 공증이 없는 앱이다. macOS Gatekeeper나 Windows SmartScreen이 처음 실행할 때 경고할 수 있다.
+1. `Quota.Donut_*_x64-setup.exe`를 실행한다.
+2. "Windows의 PC 보호" 창이 뜨면 **추가 정보 > 실행**을 누른다. 코드 서명을 받지 않은 설치 프로그램이라서 나오는 경고다.
+
+## 업데이트
+
+앱이 1시간마다 새 버전을 확인한다. 새 버전이 있으면 화면 위쪽에 알림이 뜨고, **업데이트**를 누르면 내려받아 서명을 검증한 뒤 설치하고 다시 시작한다. 설치 파일을 다시 받을 필요가 없다.
+
+## 알아 둘 점
+
+- 로그인 정보는 이 컴퓨터에만 저장한다. macOS는 Keychain, Windows는 현재 사용자 전용 암호화 파일을 쓴다. 사용량 조회는 각 서비스 서버에 직접 요청한다.
+- 각 서비스가 공개하지 않은 사용량 조회 방식을 쓴다. 각 서비스의 공식 앱이 쓰는 로그인 설정을 빌려 쓰므로, 서비스 쪽 변경이나 정책에 따라 로그인이나 조회가 예고 없이 멈출 수 있다. 각 서비스의 이용 약관은 직접 확인하고 사용한다.
+- 공식 서비스가 아니며 Codex(OpenAI), Claude(Anthropic), Google과 관계가 없다.
