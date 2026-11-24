@@ -31,6 +31,13 @@ Codex, Claude, Google Antigravity(Gemini) 계정의 남은 사용 한도와 초�
 - Windows 작업 표시줄 트레이는 글자를 표시할 수 없어서, 고른 계정 중 가장 적게 남은 값을 도넛 아이콘 하나로 보여 준다. 아이콘에 마우스를 올리면 계정별 수치가 나온다.
 - 창을 닫아도 트레이에 남아 계속 조회한다. 컴퓨터에 로그인할 때 자동으로 실행하도록 설정할 수 있다.
 
+<p align="center">
+  <img src="docs/screenshots/menubar-macos.png" width="600" alt="macOS 메뉴바: 도넛 아이콘과 계정별 약칭, 남은 비율">
+  <br>
+  <img src="docs/screenshots/tray-windows.png" width="560" alt="Windows 트레이: 도넛 아이콘과 계정별 수치 툴팁">
+</p>
+<p align="center"><sub>앱이 그리는 방식을 따라 예시 수치로 만든 그림이다. 메뉴바와 작업 표시줄의 다른 아이콘은 단순화했다.</sub></p>
+
 ### 자동 업데이트
 - 앱이 1시간마다 새 버전을 확인한다. 새 버전이 있으면 화면 위쪽에 알림이 뜨고, **업데이트**를 누르면 내려받아 서명을 검증한 뒤 설치하고 다시 시작한다.
 - 설치 파일을 다시 받거나 보안 경고를 다시 거칠 필요가 없다.
