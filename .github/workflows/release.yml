@@ -1,0 +1,81 @@
+name: Release
+# Runs in this public repo so Actions minutes are free; the private source is read with a read-only deploy key.
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Source tag to build, e.g. v0.3.0
+        required: true
+permissions:
+  contents: write
+concurrency:
+  group: release-${{ inputs.tag }}
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            args: --bundles app
+          - os: windows-latest
+            args: --bundles nsis
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: imeru/quota-donut
+          ref: ${{ inputs.tag }}
+          ssh-key: ${{ secrets.SOURCE_DEPLOY_KEY }}
+          path: src
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: src/package-lock.json
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Import macOS signing certificate
+        if: runner.os == 'macOS'
+        env:
+          CERT: ${{ secrets.MAC_CERTIFICATE }}
+          CERT_PASSWORD: ${{ secrets.MAC_CERTIFICATE_PASSWORD }}
+        run: |
+          KC="$RUNNER_TEMP/build.keychain-db"
+          echo "$CERT" | base64 --decode > "$RUNNER_TEMP/cert.p12"
+          security create-keychain -p ci "$KC"
+          security set-keychain-settings -lut 21600 "$KC"
+          security unlock-keychain -p ci "$KC"
+          security import "$RUNNER_TEMP/cert.p12" -k "$KC" -P "$CERT_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k ci "$KC" >/dev/null
+          security list-keychains -d user -s "$KC" $(security list-keychains -d user | tr -d '"')
+          # Self-signed: trust it for code signing so codesign accepts the identity.
+          security find-certificate -c "QuotaDot Dev" -p "$KC" > "$RUNNER_TEMP/cert.pem"
+          sudo security add-trusted-cert -d -r trustRoot -p codeSign -k /Library/Keychains/System.keychain "$RUNNER_TEMP/cert.pem"
+          security find-identity -v -p codesigning "$KC"
+          rm -f "$RUNNER_TEMP/cert.p12"
+      - run: npm ci
+        working-directory: src
+      - run: npm test
+        working-directory: src
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ runner.os == 'macOS' && 'QuotaDot Dev' || '' }}
+        with:
+          projectPath: src
+          tagName: ${{ inputs.tag }}
+          releaseName: Quota Donut ${{ inputs.tag }}
+          releaseBody: Quota Donut ${{ inputs.tag }}
+          releaseDraft: true
+          includeUpdaterJson: true
+          args: ${{ matrix.args }}
+  publish:
+    # Publish only after both platforms uploaded, so latest.json never lists one platform alone.
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - run: gh release edit "${{ inputs.tag }}" --draft=false --latest -R "$GITHUB_REPOSITORY"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
